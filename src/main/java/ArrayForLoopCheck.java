@@ -25,7 +25,7 @@ public class ArrayForLoopCheck extends Check {
             return;
         }
         DetailAST postExpr = condition.getNextSibling().getNextSibling();
-        if (!isSingleIncrement(postExpr)) {
+        if (!isSingleIncrement(postExpr, var)) {
             return;
         }
         DetailAST loopBody = postExpr.getNextSibling().getNextSibling();
@@ -75,20 +75,18 @@ public class ArrayForLoopCheck extends Check {
         return exprRight.getFirstChild().getText();
     }
 
-    private boolean isSingleIncrement(DetailAST postExpr) {
+    private boolean isSingleIncrement(DetailAST postExpr, String var) {
         if (postExpr.getChildCount() != 1) {
             return false;
         }
         DetailAST expr = postExpr.getFirstChild().getFirstChild().getFirstChild();
-        if (expr.getType() == TokenTypes.INC || expr.getType() == TokenTypes.POST_INC) {
-            return true;
-        }
-        return false;
+        return (expr.getType() == TokenTypes.INC || expr.getType() == TokenTypes.POST_INC) &&
+                expr.getFirstChild().getText().equals(var);
     }
 
     private boolean loopBodyContainsDifficultExpr(DetailAST expr, String array, String var) {
         if (expr.getType() == TokenTypes.IDENT && expr.getText().equals(var)) {
-            return isDifficultIdent(expr, array, var);
+            return isDifficultIdent(expr, array);
         }
         for (DetailAST child = expr.getFirstChild(); child != null; child = child.getNextSibling()) {
             if (loopBodyContainsDifficultExpr(child, array, var)) {
@@ -98,7 +96,7 @@ public class ArrayForLoopCheck extends Check {
         return false;
     }
 
-    private boolean isDifficultIdent(DetailAST ident, String array, String var) {
+    private boolean isDifficultIdent(DetailAST ident, String array) {
         DetailAST parent = ident.getParent();
         if (parent.getType() == TokenTypes.DOT || parent.getType() == TokenTypes.METHOD_CALL) {
             return false;
